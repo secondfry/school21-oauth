@@ -1,4 +1,4 @@
-import type { RequestEvent } from '@sveltejs/kit';
+import { redirect, type RequestEvent } from '@sveltejs/kit';
 import cookie from 'cookie';
 import type { NextAuthOptions } from 'next-auth';
 import { NextAuthHandler } from 'next-auth/core';
@@ -47,6 +47,10 @@ const parseBody = async (request: Request) => {
 };
 
 const NextAuthSvelteHandler = async (event: RequestEvent<Params>, authOptions: NextAuthOptions) => {
+  if (!event.params.nextauth) {
+    throw redirect(307, '/api/auth/signin');
+  }
+
   const routeParams = event.params.nextauth.split('/');
   AuthLogger.debug({ routeParams }, `routeParams: ${log_O(routeParams)}`);
   const body = await parseBody(event.request);
