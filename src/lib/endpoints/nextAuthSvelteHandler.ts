@@ -2,13 +2,17 @@ import { redirect, type RequestEvent } from '@sveltejs/kit';
 import cookie from 'cookie';
 import type { NextAuthOptions } from 'next-auth';
 import { NextAuthHandler } from 'next-auth/core';
-import type { NextAuthAction } from 'next-auth/core/types';
+import type { NextAuthAction, Session } from 'next-auth/core/types';
 
 import { AuthLogger, log_O } from '$src/lib/logger';
 
 type Params = {
-  nextauth: string
+  nextauth: string;
 };
+
+const getCookies = (event: RequestEvent) => parseCookies(event.request.headers.get('cookie'));
+const getHeaders = (event: RequestEvent) => Object.fromEntries(event.request.headers.entries());
+const getHost = (event: RequestEvent) => detectHost(event.request.headers.get('x-forwarded-host'));
 
 // NOTE(secondfry): Error: Missing "./utils/detect-host" export in "next-auth" package
 const detectHost = (forwardedHost: string | null) => {
@@ -31,7 +35,7 @@ const expectsJSON = (request: Request) => {
   }
 
   return false;
-}
+};
 
 const parseBody = async (request: Request) => {
   const body = await request.text();
@@ -55,7 +59,7 @@ const NextAuthSvelteHandler = async (event: RequestEvent<Params>, authOptions: N
   AuthLogger.debug({ routeParams }, `routeParams: ${log_O(routeParams)}`);
   const body = await parseBody(event.request);
   AuthLogger.debug({ body }, `body: ${log_O(body)}`);
-  const cookies = parseCookies(event.request.headers.get('cookie'));
+  const cookies = getCookies(event);
   AuthLogger.debug({ cookies }, `cookies: ${log_O(cookies)}`);
   const query = Object.fromEntries(event.url.searchParams.entries());
   AuthLogger.debug({ query }, `query: ${log_O(query)}`);
@@ -65,15 +69,15 @@ const NextAuthSvelteHandler = async (event: RequestEvent<Params>, authOptions: N
   // NOTE(secondfry): IDK if string generic is proper here.
   const nextAuthResponse = await NextAuthHandler<string>({
     req: {
-      host: detectHost(event.request.headers.get('x-forwarded-host')),
-      body,
-      query,
-      cookies,
-      headers: Object.fromEntries(event.request.headers.entries()),
-      method: event.request.method,
       action: routeParams?.[0] as NextAuthAction,
-      providerId: routeParams?.[1],
+      body,
+      cookies,
       error: event.url.searchParams.get('error') ?? routeParams?.[1],
+      headers: getHeaders(event),
+      host: getHost(event),
+      method: event.request.method,
+      providerId: routeParams?.[1],
+      query,
     },
     options: authOptions,
   });
@@ -123,6 +127,35 @@ const NextAuthSvelteHandler = async (event: RequestEvent<Params>, authOptions: N
   });
 };
 
-export {
-  NextAuthSvelteHandler
+const getServerSession = async (event: RequestEvent, authOptions: NextAuthOptions) => {
+  authOptions.secret = authOptions.secret ?? authOptions.jwt?.secret ?? process.env.NEXTAUTH_SECRET;
+
+  const session = await NextAuthHandler<Session>({
+    options: authOptions,
+    req: {
+      action: 'session',
+      cookies: getCookies(event),
+      headers: getHeaders(event),
+      host: getHost(event),
+      method: 'GET',
+    },
+  });
+
+  const { body, cookies = [], status = 200 } = session;
+
+  if (body && typeof body !== 'string' && Object.keys(body).length) {
+    if (status === 200)
+      return {
+        body,
+        cookies,
+      };
+    throw new Error((body as any).message);
+  }
+
+  return {
+    body: null,
+    cookies,
+  };
 };
+
+export { getServerSession, NextAuthSvelteHandler };

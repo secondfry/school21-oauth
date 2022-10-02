@@ -1,6 +1,6 @@
-import Logger from 'js-logger';
-import debugFactory from 'debug';
 import dayjs from 'dayjs';
+import debugFactory from 'debug';
+import Logger from 'js-logger';
 
 const getTimestamp = () => dayjs().format('YYYY-MM-DDTHH:mm:ssZ[Z]');
 
