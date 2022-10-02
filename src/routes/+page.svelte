@@ -7,9 +7,11 @@
 <div class="container">
   <h1>OAuth Provider для студентов Школы 21</h1>
   {#if data.auth !== null}
+    <a href="/api/auth/signout">Выйти</a>
+    <h2>Данные сессии</h2>
     <pre>{JSON.stringify(data.auth, null, 2)}</pre>
   {:else}
-    <a href="/api/auth/signin/42-school">Авторизоваться через Интру</a>
+    <a href="/api/auth/signin/42-school">Аутентификация через Интру</a>
   {/if}
 </div>
 

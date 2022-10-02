@@ -7,6 +7,7 @@ declare global {
   declare namespace App {
     interface Locals {
       auth: Session | null;
+      sessionTokenHasBeenSet: boolean | undefined;
     }
   }
 }

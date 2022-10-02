@@ -10,6 +10,8 @@ type Params = {
   nextauth: string;
 };
 
+const NEXT_AUTH_SESSION_TOKEN = 'next-auth.session-token';
+
 const getCookies = (event: RequestEvent) => parseCookies(event.request.headers.get('cookie'));
 const getHeaders = (event: RequestEvent) => Object.fromEntries(event.request.headers.entries());
 const getHost = (event: RequestEvent) => detectHost(event.request.headers.get('x-forwarded-host'));
@@ -89,9 +91,11 @@ const NextAuthSvelteHandler = async (event: RequestEvent<Params>, authOptions: N
     nextAuthResponse.headers?.map((nextAuthHeader) => [nextAuthHeader.key, nextAuthHeader.value]) ??
     [];
   // NOTE(next-auth): response.cookies?.forEach((cookie) => setCookie(res, cookie));
-  nextAuthResponse.cookies?.map(({ name, value, options }) =>
-    headers.push(['Set-Cookie', cookie.serialize(name, value, options)]),
-  );
+  nextAuthResponse.cookies?.map(({ name, value, options }) => {
+    headers.push(['Set-Cookie', cookie.serialize(name, value, options)]);
+
+    if (name === NEXT_AUTH_SESSION_TOKEN) event.locals.sessionTokenHasBeenSet = true;
+  });
 
   // NOTE(next-auth):
   // if (response.redirect) {
@@ -158,4 +162,4 @@ const getServerSession = async (event: RequestEvent, authOptions: NextAuthOption
   };
 };
 
-export { getServerSession, NextAuthSvelteHandler };
+export { NEXT_AUTH_SESSION_TOKEN, getServerSession, NextAuthSvelteHandler };
