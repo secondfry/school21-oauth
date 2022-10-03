@@ -1,0 +1,11 @@
+services:
+  sveltekit:
+    build: .
+    ports:
+      - 5173:5173
+    env_file:
+      - .env
+  database:
+    image: mongo:6.0.2-focal
+    ports:
+      - 27017:27017

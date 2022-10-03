@@ -11,7 +11,7 @@
     <h2>Данные сессии</h2>
     <pre>{JSON.stringify(data.auth, null, 2)}</pre>
   {:else}
-    <a href="/api/auth/signin/42-school">Аутентификация через Интру</a>
+    <a href="/api/auth/signin">Аутентификация</a>
   {/if}
 </div>
 

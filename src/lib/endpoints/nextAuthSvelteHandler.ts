@@ -87,7 +87,7 @@ const NextAuthSvelteHandler = async (event: RequestEvent<Params>, authOptions: N
   AuthLogger.debug({ nextAuthResponse }, `nextAuthResponse: ${log_O(nextAuthResponse)}`);
 
   // NOTE(next-auth): response.headers?.forEach((h) => res.setHeader(h.key, h.value));
-  const headers =
+  const headers: [string, string][] =
     nextAuthResponse.headers?.map((nextAuthHeader) => [nextAuthHeader.key, nextAuthHeader.value]) ??
     [];
   // NOTE(next-auth): response.cookies?.forEach((cookie) => setCookie(res, cookie));
