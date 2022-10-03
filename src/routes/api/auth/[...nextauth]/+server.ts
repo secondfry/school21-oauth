@@ -4,7 +4,6 @@ import type EcoleProviderType from 'next-auth/providers/42-school';
 import type EmailProviderType from 'next-auth/providers/email';
 
 import { NextAuthSvelteHandler } from '$lib/endpoints/nextAuthSvelteHandler';
-import { AuthLogger, log_O } from '$lib/logger';
 import clientPromise from '$lib/mongodb';
 
 import type { RequestHandler } from './$types';
@@ -12,7 +11,7 @@ import type { RequestHandler } from './$types';
 // NOTE(secondfry): `next-auth` is cursed.
 // Works in development, fails in production.
 // You may find yourself lost in sveltekit/vite/rollup/esbuild/typescript build systems.
-const forceDefault = <T extends any>(module: any): T => {
+const forceDefault = <T>(module: any): T => {
   while (module.default) module = module.default;
   return module;
 };
@@ -34,11 +33,11 @@ export const authOptions: NextAuthOptions = {
     EmailProvider({
       server: {
         host: process.env.EMAIL_HOST,
-        port: process.env.EMAIL_PORT,
+        port: Number(process.env.EMAIL_PORT),
         auth: {
           user: process.env.EMAIL_USER,
           pass: process.env.EMAIL_PASS,
-        }
+        },
       },
       from: process.env.EMAIL_FROM,
     }),
@@ -47,10 +46,9 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({
       account,
-      credentials: _credentials,
       email,
-      profile: _profile,
-      user: _user,
+      // TODO(secondfry): store profile.
+      profile,
     }) {
       if (!email?.verificationRequest) {
         return true;
@@ -65,6 +63,7 @@ export const authOptions: NextAuthOptions = {
   },
 };
 
-export const GET: RequestHandler = async (event) => await NextAuthSvelteHandler(event, authOptions);
+export const GET: RequestHandler = async (event) =>
+  await NextAuthSvelteHandler(event, authOptions);
 export const POST: RequestHandler = async (event) =>
   await NextAuthSvelteHandler(event, authOptions);

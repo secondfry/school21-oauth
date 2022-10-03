@@ -12,9 +12,12 @@ type Params = {
 
 const NEXT_AUTH_SESSION_TOKEN = 'next-auth.session-token';
 
-const getCookies = (event: RequestEvent) => parseCookies(event.request.headers.get('cookie'));
-const getHeaders = (event: RequestEvent) => Object.fromEntries(event.request.headers.entries());
-const getHost = (event: RequestEvent) => detectHost(event.request.headers.get('x-forwarded-host'));
+const getCookies = (event: RequestEvent) =>
+  parseCookies(event.request.headers.get('cookie'));
+const getHeaders = (event: RequestEvent) =>
+  Object.fromEntries(event.request.headers.entries());
+const getHost = (event: RequestEvent) =>
+  detectHost(event.request.headers.get('x-forwarded-host'));
 
 // NOTE(secondfry): Error: Missing "./utils/detect-host" export in "next-auth" package
 const detectHost = (forwardedHost: string | null) => {
@@ -44,15 +47,22 @@ const parseBody = async (request: Request) => {
 
   try {
     return JSON.parse(body);
-  } catch {}
+  } catch {
+    /* noop */
+  }
   try {
     return Object.fromEntries(new URLSearchParams(body).entries());
-  } catch {}
+  } catch {
+    /* noop */
+  }
 
   return body;
 };
 
-const NextAuthSvelteHandler = async (event: RequestEvent<Params>, authOptions: NextAuthOptions) => {
+const NextAuthSvelteHandler = async (
+  event: RequestEvent<Params>,
+  authOptions: NextAuthOptions,
+) => {
   if (!event.params.nextauth) {
     throw redirect(307, '/api/auth/signin');
   }
@@ -66,7 +76,10 @@ const NextAuthSvelteHandler = async (event: RequestEvent<Params>, authOptions: N
   const query = Object.fromEntries(event.url.searchParams.entries());
   AuthLogger.debug({ query }, `query: ${log_O(query)}`);
 
-  authOptions.secret = authOptions.secret ?? authOptions.jwt?.secret ?? process.env.NEXTAUTH_SECRET;
+  authOptions.secret =
+    authOptions.secret ??
+    authOptions.jwt?.secret ??
+    process.env.NEXTAUTH_SECRET;
 
   // NOTE(secondfry): IDK if string generic is proper here.
   const nextAuthResponse = await NextAuthHandler<string>({
@@ -84,17 +97,23 @@ const NextAuthSvelteHandler = async (event: RequestEvent<Params>, authOptions: N
     options: authOptions,
   });
 
-  AuthLogger.debug({ nextAuthResponse }, `nextAuthResponse: ${log_O(nextAuthResponse)}`);
+  AuthLogger.debug(
+    { nextAuthResponse },
+    `nextAuthResponse: ${log_O(nextAuthResponse)}`,
+  );
 
   // NOTE(next-auth): response.headers?.forEach((h) => res.setHeader(h.key, h.value));
   const headers: [string, string][] =
-    nextAuthResponse.headers?.map((nextAuthHeader) => [nextAuthHeader.key, nextAuthHeader.value]) ??
-    [];
+    nextAuthResponse.headers?.map((nextAuthHeader) => [
+      nextAuthHeader.key,
+      nextAuthHeader.value,
+    ]) ?? [];
   // NOTE(next-auth): response.cookies?.forEach((cookie) => setCookie(res, cookie));
   nextAuthResponse.cookies?.map(({ name, value, options }) => {
     headers.push(['Set-Cookie', cookie.serialize(name, value, options)]);
 
-    if (name === NEXT_AUTH_SESSION_TOKEN) event.locals.sessionTokenHasBeenSet = true;
+    if (name === NEXT_AUTH_SESSION_TOKEN)
+      event.locals.sessionTokenHasBeenSet = true;
   });
 
   // NOTE(next-auth):
@@ -131,8 +150,14 @@ const NextAuthSvelteHandler = async (event: RequestEvent<Params>, authOptions: N
   });
 };
 
-const getServerSession = async (event: RequestEvent, authOptions: NextAuthOptions) => {
-  authOptions.secret = authOptions.secret ?? authOptions.jwt?.secret ?? process.env.NEXTAUTH_SECRET;
+const getServerSession = async (
+  event: RequestEvent,
+  authOptions: NextAuthOptions,
+) => {
+  authOptions.secret =
+    authOptions.secret ??
+    authOptions.jwt?.secret ??
+    process.env.NEXTAUTH_SECRET;
 
   const session = await NextAuthHandler<Session>({
     options: authOptions,
@@ -153,7 +178,7 @@ const getServerSession = async (event: RequestEvent, authOptions: NextAuthOption
         body,
         cookies,
       };
-    throw new Error((body as any).message);
+    throw new Error((body as unknown as Error).message);
   }
 
   return {
