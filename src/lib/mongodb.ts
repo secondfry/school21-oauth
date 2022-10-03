@@ -1,6 +1,7 @@
 // This approach is taken from https://github.com/vercel/next.js/tree/canary/examples/with-mongodb
 import dotenv from 'dotenv';
 import { MongoClient } from 'mongodb';
+import type { AuthorizationCode, Token } from 'oauth2-server';
 
 dotenv.config();
 
@@ -33,6 +34,63 @@ if (process.env.NODE_ENV === 'development') {
   clientPromise = client.connect();
 }
 
+type OAuthAccessTokenDocument = Pick<
+  Token,
+  'accessToken' | 'accessTokenExpiresAt' | 'scope'
+> & {
+  _id: Token['accessToken'];
+  client_id: AuthorizationCode['client']['id'];
+  user_id: AuthorizationCode['user']['id'];
+};
+
+type OAuthClientDocument = AuthorizationCode['client'] & {
+  _id: AuthorizationCode['client']['id'];
+  secret: string;
+};
+
+type OAuthCodeDocument = Pick<
+  AuthorizationCode,
+  'authorizationCode' | 'expiresAt' | 'redirectUri' | 'scope'
+> & {
+  _id: AuthorizationCode['authorizationCode'];
+  client_id: AuthorizationCode['client']['id'];
+  user_id: AuthorizationCode['user']['id'];
+};
+
+type OAuthRefreshTokenDocument = Required<
+  Pick<Token, 'refreshToken' | 'refreshTokenExpiresAt' | 'scope'>
+> & {
+  _id: Token['refreshToken'];
+  client_id: AuthorizationCode['client']['id'];
+  user_id: AuthorizationCode['user']['id'];
+};
+
+type OAuthUserDocument = AuthorizationCode['user'] & {
+  _id: AuthorizationCode['user']['id'];
+};
+
+const getOAuthAccessTokens = async () =>
+  (await clientPromise)
+    .db()
+    .collection<OAuthAccessTokenDocument>('oauth_tokens');
+const getOAuthClients = async () =>
+  (await clientPromise).db().collection<OAuthClientDocument>('oauth_clients');
+const getOAuthCodes = async () =>
+  (await clientPromise).db().collection<OAuthCodeDocument>('oauth_codes');
+const getOAuthRefreshTokens = async () =>
+  (await clientPromise)
+    .db()
+    .collection<OAuthRefreshTokenDocument>('oauth_tokens');
+const getOAuthUsers = async () =>
+  (await clientPromise).db().collection<OAuthUserDocument>('oauth_users');
+
 // Export a module-scoped MongoClient promise. By doing this in a
 // separate module, the client can be shared across functions.
-export default clientPromise;
+export {
+  clientPromise,
+  getOAuthAccessTokens,
+  getOAuthClients,
+  getOAuthCodes,
+  getOAuthRefreshTokens,
+  getOAuthUsers,
+};

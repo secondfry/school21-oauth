@@ -4,7 +4,7 @@ import type EcoleProviderType from 'next-auth/providers/42-school';
 import type EmailProviderType from 'next-auth/providers/email';
 
 import { NextAuthSvelteHandler } from '$lib/endpoints/nextAuthSvelteHandler';
-import clientPromise from '$lib/mongodb';
+import { clientPromise } from '$lib/mongodb';
 
 import type { RequestHandler } from './$types';
 
