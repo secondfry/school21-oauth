@@ -31,11 +31,8 @@ const NextAuthSvelteHandler = async (
   const routeParams = event.params.nextauth.split('/');
   AuthLogger.debug({ routeParams }, `routeParams: ${log_O(routeParams)}`);
   const body = await parseBody(event.request);
-  AuthLogger.debug({ body }, `body: ${log_O(body)}`);
   const cookies = getCookies(event.request);
-  AuthLogger.debug({ cookies }, `cookies: ${log_O(cookies)}`);
   const query = getQuery(event.url);
-  AuthLogger.debug({ query }, `query: ${log_O(query)}`);
 
   authOptions.secret =
     authOptions.secret ??
@@ -57,11 +54,6 @@ const NextAuthSvelteHandler = async (
     },
     options: authOptions,
   });
-
-  AuthLogger.debug(
-    { nextAuthResponse },
-    `nextAuthResponse: ${log_O(nextAuthResponse)}`,
-  );
 
   // NOTE(next-auth): response.headers?.forEach((h) => res.setHeader(h.key, h.value));
   const headers: [string, string][] =
@@ -111,6 +103,8 @@ const NextAuthSvelteHandler = async (
   });
 };
 
+type MySession = Session & { user_handle: string };
+
 const getServerSession = async (
   { request }: RequestEvent,
   authOptions: NextAuthOptions,
@@ -120,7 +114,7 @@ const getServerSession = async (
     authOptions.jwt?.secret ??
     process.env.NEXTAUTH_SECRET;
 
-  const session = await NextAuthHandler<Session>({
+  const session = await NextAuthHandler<MySession>({
     options: authOptions,
     req: {
       action: 'session',
@@ -148,4 +142,9 @@ const getServerSession = async (
   };
 };
 
-export { NEXT_AUTH_SESSION_TOKEN, getServerSession, NextAuthSvelteHandler };
+export {
+  NEXT_AUTH_SESSION_TOKEN,
+  getServerSession,
+  NextAuthSvelteHandler,
+  type MySession,
+};

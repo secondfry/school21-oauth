@@ -19,5 +19,6 @@ Logger.setHandler(loggerHandler);
 Logger.setLevel(Logger.TRACE);
 
 const AuthLogger = Logger.get(`secondfry:auth`);
+const RequestLogger = Logger.get(`secondfry:request`);
 
-export { AuthLogger, log_O, log_o, getTimestamp };
+export { AuthLogger, RequestLogger, log_O, log_o, getTimestamp };

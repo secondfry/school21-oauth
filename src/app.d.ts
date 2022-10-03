@@ -1,4 +1,6 @@
-import type { Session } from 'next-auth/core/types';
+import type { ILogger } from 'js-logger';
+
+import type { MySession } from '$src/lib/endpoints/nextAuthSvelteHandler';
 
 // See https://kit.svelte.dev/docs/types#app
 // for information about these interfaces
@@ -6,7 +8,8 @@ import type { Session } from 'next-auth/core/types';
 declare global {
   declare namespace App {
     interface Locals {
-      auth: Session | null;
+      auth: MySession | null;
+      logger: ILogger;
       sessionTokenHasBeenSet: boolean | undefined;
     }
   }

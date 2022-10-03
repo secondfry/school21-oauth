@@ -65,8 +65,12 @@ type OAuthRefreshTokenDocument = Required<
   user_id: AuthorizationCode['user']['id'];
 };
 
-type OAuthUserDocument = AuthorizationCode['user'] & {
-  _id: AuthorizationCode['user']['id'];
+type UserDocument = {
+  email: string;
+  emailVerified?: Date;
+  handle: string;
+  image?: string;
+  name?: string;
 };
 
 const getOAuthAccessTokens = async () =>
@@ -81,8 +85,8 @@ const getOAuthRefreshTokens = async () =>
   (await clientPromise)
     .db()
     .collection<OAuthRefreshTokenDocument>('oauth_tokens');
-const getOAuthUsers = async () =>
-  (await clientPromise).db().collection<OAuthUserDocument>('oauth_users');
+const getUsers = async () =>
+  (await clientPromise).db().collection<UserDocument>('users');
 
 // Export a module-scoped MongoClient promise. By doing this in a
 // separate module, the client can be shared across functions.
@@ -92,5 +96,10 @@ export {
   getOAuthClients,
   getOAuthCodes,
   getOAuthRefreshTokens,
-  getOAuthUsers,
+  getUsers,
+  type OAuthAccessTokenDocument,
+  type OAuthClientDocument,
+  type OAuthCodeDocument,
+  type OAuthRefreshTokenDocument,
+  type UserDocument,
 };

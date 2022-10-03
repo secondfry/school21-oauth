@@ -11,6 +11,7 @@ import type { RequestHandler } from './$types';
 // NOTE(secondfry): `next-auth` is cursed.
 // Works in development, fails in production.
 // You may find yourself lost in sveltekit/vite/rollup/esbuild/typescript build systems.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const forceDefault = <T>(module: any): T => {
   while (module.default) module = module.default;
   return module;
@@ -22,13 +23,31 @@ const EmailProvider = forceDefault<typeof EmailProviderType>(
   await import('next-auth/providers/email'),
 );
 
+const adapter = MongoDBAdapter(clientPromise);
+const _createUser = adapter.createUser;
+adapter.createUser = (data) => {
+  if (!data.handle && data.email) {
+    data.handle = (data.email as string).split('@')[0];
+  }
+
+  return _createUser(data);
+};
+
 export const authOptions: NextAuthOptions = {
-  adapter: MongoDBAdapter(clientPromise),
+  adapter,
   // Configure one or more authentication providers
   providers: [
     EcoleProvider({
       clientId: process.env.ECOLE_ID ?? '',
       clientSecret: process.env.ECOLE_SECRET ?? '',
+      profile: (profile) => ({
+        data: profile,
+        email: profile.email,
+        handle: profile.login,
+        id: profile.login,
+        image: profile.image_url,
+        name: profile.displayname,
+      }),
     }),
     EmailProvider({
       server: {
@@ -44,12 +63,7 @@ export const authOptions: NextAuthOptions = {
     // ...add more providers here
   ],
   callbacks: {
-    async signIn({
-      account,
-      email,
-      // TODO(secondfry): store profile.
-      profile,
-    }) {
+    async signIn({ account, email }) {
       if (!email?.verificationRequest) {
         return true;
       }
@@ -59,6 +73,10 @@ export const authOptions: NextAuthOptions = {
       }
 
       return false;
+    },
+    async session({ session, user }) {
+      session.user_handle = user.handle;
+      return session;
     },
   },
 };

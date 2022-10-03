@@ -3,8 +3,10 @@ import {
   getOAuthClients,
   getOAuthCodes,
   getOAuthRefreshTokens,
-  getOAuthUsers,
+  getUsers,
+  type OAuthClientDocument,
 } from '$src/lib/mongodb';
+import type { Filter } from 'mongodb';
 import type OAuth2Server from 'oauth2-server';
 
 const oAuthModel: OAuth2Server.AuthorizationCodeModel &
@@ -44,7 +46,7 @@ const oAuthModel: OAuth2Server.AuthorizationCodeModel &
     if (!token) return null;
     const [client, user] = await Promise.all([
       (await getOAuthClients()).findOne({ _id: token.client_id }),
-      (await getOAuthUsers()).findOne({ _id: token.user_id }),
+      (await getUsers()).findOne({ handle: token.user_id }),
     ]);
     if (!client) return null;
     if (!user) return null;
@@ -68,7 +70,7 @@ const oAuthModel: OAuth2Server.AuthorizationCodeModel &
     if (!token) return null;
     const [client, user] = await Promise.all([
       (await getOAuthClients()).findOne({ _id: token.client_id }),
-      (await getOAuthUsers()).findOne({ _id: token.user_id }),
+      (await getUsers()).findOne({ handle: token.user_id }),
     ]);
     if (!client) return null;
     if (!user) return null;
@@ -92,7 +94,7 @@ const oAuthModel: OAuth2Server.AuthorizationCodeModel &
     if (!code) return null;
     const [client, user] = await Promise.all([
       (await getOAuthClients()).findOne({ _id: code.client_id }),
-      (await getOAuthUsers()).findOne({ _id: code.user_id }),
+      (await getUsers()).findOne({ handle: code.user_id }),
     ]);
     if (!client) return null;
     if (!user) return null;
@@ -110,9 +112,14 @@ const oAuthModel: OAuth2Server.AuthorizationCodeModel &
    * This model function is required for all grant types.
    */
   getClient: async (clientId, clientSecret) => {
-    const client = await (
-      await getOAuthClients()
-    ).findOne({ _id: clientId, secret: clientSecret });
+    const query: Filter<OAuthClientDocument> = {
+      _id: clientId,
+    };
+    if (clientSecret) {
+      query.secret = clientSecret;
+    }
+
+    const client = await (await getOAuthClients()).findOne(query);
     if (!client) return null;
     const result: OAuth2Server.Client = { ...client };
     delete result.secret;
@@ -142,12 +149,14 @@ const oAuthModel: OAuth2Server.AuthorizationCodeModel &
       ).findOneAndUpdate(
         { _id: token.accessToken },
         {
-          _id: token.accessToken,
-          access_token: token.accessToken,
-          expires_at: token.accessTokenExpiresAt,
-          scope: token.scope,
-          client_id: client.id,
-          user_id: user.id,
+          $set: {
+            _id: token.accessToken,
+            accessToken: token.accessToken,
+            accessTokenExpiresAt: token.accessTokenExpiresAt,
+            scope: token.scope,
+            client_id: client.id,
+            user_id: user.handle,
+          },
         },
         { upsert: true },
       ),
@@ -156,12 +165,14 @@ const oAuthModel: OAuth2Server.AuthorizationCodeModel &
       ).findOneAndUpdate(
         { _id: token.refreshToken },
         {
-          _id: token.refreshToken,
-          refresh_token: token.refreshToken,
-          expires_at: token.refreshTokenExpiresAt,
-          scope: token.scope,
-          client_id: client.id,
-          user_id: user.id,
+          $set: {
+            _id: token.refreshToken,
+            refreshToken: token.refreshToken,
+            refreshTokenExpiresAt: token.refreshTokenExpiresAt,
+            scope: token.scope,
+            client_id: client.id,
+            user_id: user.handle,
+          },
         },
         { upsert: true },
       ),
@@ -181,10 +192,12 @@ const oAuthModel: OAuth2Server.AuthorizationCodeModel &
     (await getOAuthCodes()).findOneAndUpdate(
       { _id: code.authorizationCode },
       {
-        ...code,
-        _id: code.authorizationCode,
-        client_id: client.id,
-        user_id: user.id,
+        $set: {
+          ...code,
+          _id: code.authorizationCode,
+          client_id: client.id,
+          user_id: user.handle,
+        },
       },
       { upsert: true },
     );
