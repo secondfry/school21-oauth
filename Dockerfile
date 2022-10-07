@@ -1,4 +1,4 @@
-FROM node:16.17.1
+FROM node:16
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt update \
@@ -12,5 +12,4 @@ RUN npm ci
 COPY . .
 RUN npm run build && npm prune --production
 
-EXPOSE 5173
 CMD ["node", "build/index.js"]
