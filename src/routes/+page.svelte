@@ -14,7 +14,8 @@
     <a href="/api/auth/signin">Аутентификация</a>
     <p>
       В случае использования аутентификации по email, указывайте вашу почту в
-      домене <code>student.21-school.ru</code>.<br />
+      домене <code>student.21-school.ru</code> или <code>21-school.ru</code>.<br
+      />
       К примеру, я бы указал <code>oadhesiv@student.21-school.ru</code>.
     </p>
   {/if}

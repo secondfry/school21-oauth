@@ -27,7 +27,11 @@ const adapter = MongoDBAdapter(clientPromise);
 const _createUser = adapter.createUser;
 adapter.createUser = (data) => {
   if (!data.handle && data.email) {
-    data.handle = (data.email as string).split('@')[0];
+    const email = data.email as string;
+    if (email.endsWith('@student.21-school.ru'))
+      data.handle = email.split('@')[0];
+    if (email.endsWith('@21-school.ru'))
+      data.handle = `staff-${email.split('@')[0]}`;
   }
 
   return _createUser(data);
@@ -68,7 +72,10 @@ export const authOptions: NextAuthOptions = {
         return true;
       }
 
-      if (account?.userId?.endsWith('@student.21-school.ru')) {
+      if (
+        account?.userId?.endsWith('@student.21-school.ru') ||
+        account?.userId?.endsWith('@21-school.ru')
+      ) {
         return true;
       }
 
