@@ -1,6 +1,6 @@
 // This approach is taken from https://github.com/vercel/next.js/tree/canary/examples/with-mongodb
 import dotenv from 'dotenv';
-import { MongoClient } from 'mongodb';
+import { MongoClient, type MongoClientOptions } from 'mongodb';
 import type { AuthorizationCode, Token } from 'oauth2-server';
 
 dotenv.config();
@@ -10,7 +10,9 @@ if (!process.env.MONGODB_URI) {
 }
 
 const uri = process.env.MONGODB_URI;
-const options = {};
+const sslCA = process.env.MONGODB_CA;
+const options: MongoClientOptions = {};
+if (sslCA) options.sslCA = sslCA;
 
 let client: MongoClient;
 let clientPromise: Promise<MongoClient>;
